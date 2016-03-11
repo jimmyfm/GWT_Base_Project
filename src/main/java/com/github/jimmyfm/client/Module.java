@@ -3,19 +3,19 @@ package com.github.jimmyfm.client;
 import com.github.jimmyfm.shared.FieldVerifier;
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
-import com.google.gwt.event.dom.client.ClickEvent;
-import com.google.gwt.event.dom.client.ClickHandler;
-import com.google.gwt.event.dom.client.KeyCodes;
-import com.google.gwt.event.dom.client.KeyUpEvent;
-import com.google.gwt.event.dom.client.KeyUpHandler;
 import com.google.gwt.user.client.rpc.AsyncCallback;
-import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.DialogBox;
 import com.google.gwt.user.client.ui.HTML;
-import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.RootPanel;
-import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.VerticalPanel;
+import com.smartgwt.client.widgets.IButton;
+import com.smartgwt.client.widgets.Label;
+import com.smartgwt.client.widgets.events.ClickEvent;
+import com.smartgwt.client.widgets.events.ClickHandler;
+import com.smartgwt.client.widgets.form.DynamicForm;
+import com.smartgwt.client.widgets.form.fields.TextItem;
+import com.smartgwt.client.widgets.form.fields.events.KeyUpEvent;
+import com.smartgwt.client.widgets.form.fields.events.KeyUpHandler;
 
 /**
  * Entry point classes define <code>onModuleLoad()</code>.
@@ -42,9 +42,10 @@ public class Module implements EntryPoint
 	 */
 	public void onModuleLoad()
 	{
-		final Button sendButton = new Button(messages.sendButton());
-		final TextBox nameField = new TextBox();
-		nameField.setText(messages.nameField());
+		DynamicForm form = new DynamicForm();
+		final IButton sendButton = new IButton(messages.sendButton());
+		final TextItem nameField = new TextItem();
+		nameField.setValue(messages.nameField());
 		final Label errorLabel = new Label();
 
 		// We can add style names to widgets
@@ -52,19 +53,20 @@ public class Module implements EntryPoint
 
 		// Add the nameField and sendButton to the RootPanel
 		// Use RootPanel.get() to get the entire body element
-		RootPanel.get("nameFieldContainer").add(nameField);
+		form.setFields(nameField);
+		RootPanel.get("nameFieldContainer").add(form.asWidget());
 		RootPanel.get("sendButtonContainer").add(sendButton);
 		RootPanel.get("errorLabelContainer").add(errorLabel);
 
 		// Focus the cursor on the name field when the app loads
-		nameField.setFocus(true);
-		nameField.selectAll();
+		nameField.focusInItem();
+		nameField.selectValue();
 
 		// Create the popup dialog box
 		final DialogBox dialogBox = new DialogBox();
 		dialogBox.setText("Remote Procedure Call");
 		dialogBox.setAnimationEnabled(true);
-		final Button closeButton = new Button("Close");
+		final IButton closeButton = new IButton("Close");
 		// We can set the id of a widget by accessing its Element
 		closeButton.getElement().setId("closeButton");
 		final Label textToServerLabel = new Label();
@@ -85,8 +87,8 @@ public class Module implements EntryPoint
 			public void onClick(ClickEvent event)
 			{
 				dialogBox.hide();
-				sendButton.setEnabled(true);
-				sendButton.setFocus(true);
+				sendButton.enable();
+				sendButton.focus();
 			}
 		});
 
@@ -106,7 +108,7 @@ public class Module implements EntryPoint
 			 */
 			public void onKeyUp(KeyUpEvent event)
 			{
-				if (event.getNativeKeyCode() == KeyCodes.KEY_ENTER)
+				if (event.getKeyName() == "Enter")
 				{
 					sendNameToServer();
 				}
@@ -118,17 +120,17 @@ public class Module implements EntryPoint
 			private void sendNameToServer()
 			{
 				// First, we validate the input.
-				errorLabel.setText("");
-				String textToServer = nameField.getText();
+				errorLabel.setContents("");
+				String textToServer = nameField.getValueAsString();
 				if (!FieldVerifier.isValidName(textToServer))
 				{
-					errorLabel.setText("Please enter at least four characters");
+					errorLabel.setContents("Please enter at least four characters");
 					return;
 				}
 
 				// Then, we send the input to the server.
-				sendButton.setEnabled(false);
-				textToServerLabel.setText(textToServer);
+				sendButton.disable();
+				textToServerLabel.setContents(textToServer);
 				serverResponseLabel.setText("");
 				greetingService.greetServer(textToServer, new AsyncCallback<String>()
 				{
@@ -139,7 +141,7 @@ public class Module implements EntryPoint
 						serverResponseLabel.addStyleName("serverResponseLabelError");
 						serverResponseLabel.setHTML(SERVER_ERROR);
 						dialogBox.center();
-						closeButton.setFocus(true);
+						closeButton.focus();
 					}
 
 					public void onSuccess(String result)
@@ -148,7 +150,7 @@ public class Module implements EntryPoint
 						serverResponseLabel.removeStyleName("serverResponseLabelError");
 						serverResponseLabel.setHTML(result);
 						dialogBox.center();
-						closeButton.setFocus(true);
+						closeButton.focus();
 					}
 				});
 			}
@@ -159,5 +161,4 @@ public class Module implements EntryPoint
 		sendButton.addClickHandler(handler);
 		nameField.addKeyUpHandler(handler);
 	}
-
 }
